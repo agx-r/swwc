@@ -41,7 +41,7 @@
 #include <unistd.h>
 #include <xkbcommon/xkbcommon.h>
 
-static const int repeat_delay = 500, repeat_rate = 40;
+static const int repeat_delay = 200, repeat_rate = 50;
 
 static void
 enter(struct input_focus_handler *handler, struct wl_list *resources, struct compositor_view *view)
