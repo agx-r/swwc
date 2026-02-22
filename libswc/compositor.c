@@ -27,7 +27,6 @@
  * SOFTWARE.
  */
 
-#include "swc.h"
 #include "compositor.h"
 #include "data_device_manager.h"
 #include "drm.h"
@@ -41,15 +40,16 @@
 #include "seat.h"
 #include "shm.h"
 #include "surface.h"
+#include "swc.h"
 #include "util.h"
 #include "view.h"
 
-#include <errno.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <assert.h>
-#include <wld/wld.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <wld/drm.h>
+#include <wld/wld.h>
 #include <xkbcommon/xkbcommon-keysyms.h>
 
 struct target {

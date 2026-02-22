@@ -117,8 +117,11 @@ update_keymap(struct xkb *xkb)
 	char *keymap_string;
 	int ret;
 
-	if (!(keymap_directory = getenv("XDG_RUNTIME_DIR")))
-		keymap_directory = "/tmp";
+	if (!(keymap_directory = getenv("XDG_RUNTIME_DIR"))) {
+		static char runtime_dir_fallback[64];
+		snprintf(runtime_dir_fallback, sizeof(runtime_dir_fallback), "/run/user/%u", (unsigned)getuid());
+		keymap_directory = runtime_dir_fallback;
+	}
 
 	xkb->indices.ctrl = xkb_keymap_mod_get_index(xkb->keymap.map, XKB_MOD_NAME_CTRL);
 	xkb->indices.alt = xkb_keymap_mod_get_index(xkb->keymap.map, XKB_MOD_NAME_ALT);

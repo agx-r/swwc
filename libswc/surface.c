@@ -32,7 +32,6 @@
 #include "wayland_buffer.h"
 
 #include <stdlib.h>
-#include <stdio.h>
 #include <wld/wld.h>
 
 /**

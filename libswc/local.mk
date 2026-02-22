@@ -96,7 +96,7 @@ $(call objects,xdg_shell): protocol/xdg-shell-server-protocol.h
 $(call objects,pointer): cursor/cursor_data.h
 
 $(dir)/libswc-internal.o: $(SWC_STATIC_OBJECTS)
-	$(link) -nostdlib -r
+	$(Q_CCLD)$(CC) -nostdlib -r -o $@ $^
 
 $(dir)/libswc.o: $(dir)/libswc-internal.o
 	$(Q_OBJCOPY)$(OBJCOPY) --localize-hidden $< $@

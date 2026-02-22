@@ -28,9 +28,9 @@
 #include "drm.h"
 #include "event.h"
 #include "internal.h"
-#include "launch.h"
 #include "kde_decoration.h"
 #include "keyboard.h"
+#include "launch.h"
 #include "panel_manager.h"
 #include "pointer.h"
 #include "screen.h"
@@ -43,7 +43,7 @@
 #include "xdg_decoration.h"
 #include "xdg_shell.h"
 #ifdef ENABLE_XWAYLAND
-# include "xserver.h"
+#include "xserver.h"
 #endif
 
 extern struct swc_launch swc_launch;

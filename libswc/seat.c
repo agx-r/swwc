@@ -415,7 +415,14 @@ seat_create(struct wl_display *display, const char *seat_name)
 	seat->data_device_listener.notify = &handle_data_device_event;
 	wl_signal_add(&seat->base.data_device->event_signal, &seat->data_device_listener);
 
-	seat->base.keyboard = keyboard_create(NULL);
+	static struct xkb_rule_names default_xkb = {
+		.rules = "evdev",
+		.model = "pc105",
+		.layout = "us,ru",
+		.variant = "colemak,",
+		.options = "grp:win_space_toggle",
+	};
+	seat->base.keyboard = keyboard_create(&default_xkb);
 	if (!seat->base.keyboard) {
 		ERROR("Could not initialize keyboard\n");
 		goto error4;
