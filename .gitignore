@@ -1,6 +1,7 @@
 *.o
 *.lo
 .*.sw*
+swcbg
 
 protocol/server-decoration-protocol.c
 protocol/server-decoration-server-protocol.h

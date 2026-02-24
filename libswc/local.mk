@@ -22,6 +22,7 @@ $(dir)_CFLAGS += -Iprotocol
 
 SWC_SOURCES =                       \
     launch/protocol.c               \
+    libswc/background.c             \
     libswc/bindings.c               \
     libswc/compositor.c             \
     libswc/data.c                   \
@@ -87,7 +88,7 @@ SWC_SHARED_OBJECTS = $(SWC_SOURCES:%.c=%.lo)
 
 # Explicitly state dependencies on generated files
 objects = $(foreach obj,$(1),$(dir)/$(obj).o $(dir)/$(obj).lo)
-$(call objects,compositor panel_manager panel screen): protocol/swc-server-protocol.h
+$(call objects,background compositor panel_manager panel screen): protocol/swc-server-protocol.h
 $(call objects,dmabuf): protocol/linux-dmabuf-unstable-v1-server-protocol.h
 $(call objects,drm drm_buffer): protocol/wayland-drm-server-protocol.h
 $(call objects,kde_decoration): protocol/server-decoration-server-protocol.h

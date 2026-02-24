@@ -48,6 +48,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <wld/drm.h>
 #include <wld/wld.h>
 #include <xkbcommon/xkbcommon-keysyms.h>
@@ -179,33 +180,42 @@ error0:
 static void
 repaint_view(struct target *target, struct compositor_view *view, pixman_region32_t *damage)
 {
-	pixman_region32_t view_region, view_damage, border_damage;
+	pixman_region32_t view_region, view_damage, border_damage, view_clip;
 	const struct swc_rectangle *geom = &view->base.geometry, *target_geom = &target->view->geometry;
+	int dx = geom->x - target_geom->x;
+	int dy = geom->y - target_geom->y;
 
 	if (!view->base.buffer)
 		return;
 
-	pixman_region32_init_rect(&view_region, geom->x, geom->y, geom->width, geom->height);
-	pixman_region32_init_with_extents(&view_damage, &view->extents);
+	pixman_region32_init_rect(&view_region, dx, dy, geom->width, geom->height);
+	if (view->background) {
+		pixman_region32_init_rect(&view_damage, dx, dy, geom->width, geom->height);
+	} else {
+		pixman_region32_init_with_extents(&view_damage, &view->extents);
+		pixman_region32_translate(&view_damage, -target_geom->x, -target_geom->y);
+	}
 	pixman_region32_init(&border_damage);
+	pixman_region32_init(&view_clip);
+	pixman_region32_copy(&view_clip, &view->clip);
+	pixman_region32_translate(&view_clip, -target_geom->x, -target_geom->y);
 
 	pixman_region32_intersect(&view_damage, &view_damage, damage);
-	pixman_region32_subtract(&view_damage, &view_damage, &view->clip);
+	pixman_region32_subtract(&view_damage, &view_damage, &view_clip);
 	pixman_region32_subtract(&border_damage, &view_damage, &view_region);
 	pixman_region32_intersect(&view_damage, &view_damage, &view_region);
 
 	pixman_region32_fini(&view_region);
+	pixman_region32_fini(&view_clip);
 
 	if (pixman_region32_not_empty(&view_damage)) {
-		pixman_region32_translate(&view_damage, -geom->x, -geom->y);
-		wld_copy_region(swc.drm->renderer, view->buffer, geom->x - target_geom->x, geom->y - target_geom->y, &view_damage);
+		pixman_region32_translate(&view_damage, -dx, -dy);
+		wld_copy_region(swc.drm->renderer, view->buffer, dx, dy, &view_damage);
 	}
 
 	pixman_region32_fini(&view_damage);
 
-	/* Draw border */
 	if (pixman_region32_not_empty(&border_damage)) {
-		pixman_region32_translate(&border_damage, -target_geom->x, -target_geom->y);
 		wld_fill_region(swc.drm->renderer, view->border.color, &border_damage);
 	}
 
@@ -222,16 +232,15 @@ renderer_repaint(struct target *target, pixman_region32_t *damage, pixman_region
 	      target->view->geometry.width, target->view->geometry.height);
 
 	wld_set_target_surface(swc.drm->renderer, target->surface);
-
-	/* Paint base damage black. */
 	if (pixman_region32_not_empty(base_damage)) {
 		pixman_region32_translate(base_damage, -target->view->geometry.x, -target->view->geometry.y);
-		wld_fill_region(swc.drm->renderer, 0xff000000, base_damage);
+		wld_fill_region(swc.drm->renderer, 0xff1b1b1b, base_damage);
 	}
 
 	wl_list_for_each_reverse (view, views, link) {
-		if (view->visible && view->base.screens & target->mask)
+		if (view->visible && view->base.screens & target->mask) {
 			repaint_view(target, view, damage);
+		}
 	}
 
 	wld_flush(swc.drm->renderer);
@@ -242,12 +251,10 @@ renderer_attach(struct compositor_view *view, struct wld_buffer *client_buffer)
 {
 	struct wld_buffer *buffer;
 	bool was_proxy = view->buffer != view->base.buffer;
-	bool needs_proxy = client_buffer && !(wld_capabilities(swc.drm->renderer, client_buffer) & WLD_CAPABILITY_READ);
+	bool needs_proxy = view->background || (client_buffer && !(wld_capabilities(swc.drm->renderer, client_buffer) & WLD_CAPABILITY_READ));
 	bool resized = view->buffer && client_buffer && (view->buffer->width != client_buffer->width || view->buffer->height != client_buffer->height);
 
 	if (client_buffer) {
-		/* Create a proxy buffer if necessary (for example a hardware buffer backing
-		 * a SHM buffer). */
 		if (needs_proxy) {
 			if (!was_proxy || resized) {
 				DEBUG("Creating a proxy buffer\n");
@@ -256,7 +263,6 @@ renderer_attach(struct compositor_view *view, struct wld_buffer *client_buffer)
 				if (!buffer)
 					return -ENOMEM;
 			} else {
-				/* Otherwise we can keep the original proxy buffer. */
 				buffer = view->buffer;
 			}
 		} else {
@@ -266,8 +272,6 @@ renderer_attach(struct compositor_view *view, struct wld_buffer *client_buffer)
 		buffer = NULL;
 	}
 
-	/* If we no longer need a proxy buffer, or the original buffer is of a
-	 * different size, destroy the old proxy image. */
 	if (view->buffer && ((!needs_proxy && was_proxy) || (needs_proxy && resized)))
 		wld_buffer_unreference(view->buffer);
 
@@ -282,9 +286,32 @@ renderer_flush_view(struct compositor_view *view)
 	if (view->buffer == view->base.buffer)
 		return;
 
-	wld_set_target_buffer(swc.shm->renderer, view->buffer);
-	wld_copy_region(swc.shm->renderer, view->base.buffer, 0, 0, &view->surface->state.damage);
-	wld_flush(swc.shm->renderer);
+	if (view->background) {
+		bool dst_mapped, src_mapped;
+		dst_mapped = wld_map(view->buffer);
+		src_mapped = wld_map(view->base.buffer);
+		if (dst_mapped && src_mapped) {
+			uint8_t *d = view->buffer->map;
+			uint8_t *s = view->base.buffer->map;
+			uint32_t width = view->base.buffer->width;
+			uint32_t height = view->base.buffer->height;
+			uint32_t dpitch = view->buffer->pitch;
+			uint32_t spitch = view->base.buffer->pitch;
+			for (uint32_t i = 0; i < height; ++i) {
+				memcpy(d, s, width * 4);
+				d += dpitch;
+				s += spitch;
+			}
+		}
+		if (dst_mapped)
+			wld_unmap(view->buffer);
+		if (src_mapped)
+			wld_unmap(view->base.buffer);
+	} else {
+		wld_set_target_buffer(swc.shm->renderer, view->buffer);
+		wld_copy_region(swc.shm->renderer, view->base.buffer, 0, 0, &view->surface->state.damage);
+		wld_flush(swc.shm->renderer);
+	}
 }
 
 /* }}} */
@@ -460,6 +487,8 @@ compositor_create_view(struct surface *surface)
 	pixman_region32_init(&view->clip);
 	wl_signal_init(&view->destroy_signal);
 	surface_set_view(surface, &view->base);
+
+	view->background = false;
 	wl_list_insert(&compositor.views, &view->link);
 
 	return view;
@@ -504,6 +533,11 @@ compositor_view_show(struct compositor_view *view)
 
 	view->visible = true;
 	view_update_screens(&view->base);
+
+	if (view->background) {
+		wl_list_remove(&view->link);
+		wl_list_insert(compositor.views.prev, &view->link);
+	}
 
 	/* Assume worst-case no clipping until we draw the next frame (in case the
 	 * surface gets moved before that. */
@@ -599,6 +633,10 @@ calculate_damage(void)
 		surface_damage = &view->surface->state.damage;
 
 		if (pixman_region32_not_empty(surface_damage)) {
+			if (view->background) {
+				fprintf(stderr, "Background surface damaged, flushing view\n");
+				fflush(stderr);
+			}
 			renderer_flush_view(view);
 
 			/* Translate surface damage to global coordinates. */
@@ -638,13 +676,13 @@ update_screen(struct screen *screen)
 
 	if (!(compositor.scheduled_updates & screen_mask(screen)))
 		return;
-
 	if (!(target = target_get(screen)))
 		return;
 
 	pixman_region32_init(&damage);
 	pixman_region32_intersect_rect(&damage, &compositor.damage, geom->x, geom->y, geom->width, geom->height);
 	pixman_region32_translate(&damage, -geom->x, -geom->y);
+
 	total_damage = wld_surface_damage(target->surface, &damage);
 
 	/* Don't repaint the screen if it is waiting for a page flip. */

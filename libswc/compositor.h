@@ -26,8 +26,8 @@
 
 #include "view.h"
 
-#include <stdbool.h>
 #include <pixman.h>
+#include <stdbool.h>
 #include <wayland-server.h>
 
 struct swc_compositor {
@@ -55,6 +55,9 @@ struct compositor_view {
 
 	/* Whether or not the view is visible (mapped). */
 	bool visible;
+
+	/* Whether or not the view is a background. */
+	bool background;
 
 	/* The box that the surface covers (including it's border). */
 	pixman_box32_t extents;

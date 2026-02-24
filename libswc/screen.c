@@ -31,8 +31,8 @@
 #include "pointer.h"
 #include "util.h"
 
-#include <stdlib.h>
 #include "swc-server-protocol.h"
+#include <stdlib.h>
 
 #define INTERNAL(s) ((struct screen *)(s))
 
@@ -92,6 +92,9 @@ bind_screen(struct wl_client *client, void *data, uint32_t version, uint32_t id)
 
 	wl_resource_set_implementation(resource, NULL, screen, &remove_resource);
 	wl_list_insert(&screen->resources, wl_resource_get_link(resource));
+
+	swc_screen_send_geometry(resource, screen->base.geometry.x, screen->base.geometry.y,
+	                         screen->base.geometry.width, screen->base.geometry.height);
 }
 
 struct screen *
@@ -185,10 +188,9 @@ screen_update_usable_geometry(struct screen *screen)
 	extents = pixman_region32_extents(&total_usable);
 
 	if (extents->x1 != screen->base.usable_geometry.x
-	 || extents->y1 != screen->base.usable_geometry.y
-	 || (extents->x2 - extents->x1) != screen->base.usable_geometry.width
-	 || (extents->y2 - extents->y1) != screen->base.usable_geometry.height)
-	{
+	    || extents->y1 != screen->base.usable_geometry.y
+	    || (extents->x2 - extents->x1) != screen->base.usable_geometry.width
+	    || (extents->y2 - extents->y1) != screen->base.usable_geometry.height) {
 		screen->base.usable_geometry.x = extents->x1;
 		screen->base.usable_geometry.y = extents->y1;
 		screen->base.usable_geometry.width = extents->x2 - extents->x1;

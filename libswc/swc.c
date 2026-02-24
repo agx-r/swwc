@@ -22,6 +22,7 @@
  */
 
 #include "swc.h"
+#include "background.h"
 #include "bindings.h"
 #include "compositor.h"
 #include "data_device_manager.h"
@@ -196,6 +197,12 @@ swc_initialize(struct wl_display *display, struct wl_event_loop *event_loop, con
 		goto error13;
 	}
 
+	swc.background_manager = background_manager_create(display);
+	if (!swc.background_manager) {
+		ERROR("Could not initialize background manager\n");
+		goto error13a;
+	}
+
 #ifdef ENABLE_XWAYLAND
 	if (!xserver_initialize()) {
 		ERROR("Could not initialize xwayland\n");
@@ -209,8 +216,10 @@ swc_initialize(struct wl_display *display, struct wl_event_loop *event_loop, con
 
 #ifdef ENABLE_XWAYLAND
 error14:
-	wl_global_destroy(swc.panel_manager);
 #endif
+	wl_global_destroy(swc.background_manager);
+error13a:
+	wl_global_destroy(swc.panel_manager);
 error13:
 	wl_global_destroy(swc.kde_decoration_manager);
 error12:
