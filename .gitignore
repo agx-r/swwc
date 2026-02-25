@@ -1,8 +1,8 @@
 *.o
 *.lo
 .*.sw*
-swcbg
-swcshot
+swcbg/swcbg
+swcshot/swcshot
 
 protocol/server-decoration-protocol.c
 protocol/server-decoration-server-protocol.h
