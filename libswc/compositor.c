@@ -1,6 +1,7 @@
 /* swc: libswc/compositor.c
  *
  * Copyright (c) 2013-2020 Michael Forney
+ * Copyright (c) 2026      agx
  *
  * Based in part upon compositor.c from weston, which is:
  *
@@ -178,7 +179,7 @@ error0:
 /* Rendering {{{ */
 
 static void
-repaint_view(struct target *target, struct compositor_view *view, pixman_region32_t *damage)
+repaint_view(struct wld_renderer *renderer, struct target *target, struct compositor_view *view, pixman_region32_t *damage)
 {
 	pixman_region32_t view_region, view_damage, border_damage, view_clip;
 	const struct swc_rectangle *geom = &view->base.geometry, *target_geom = &target->view->geometry;
@@ -210,13 +211,13 @@ repaint_view(struct target *target, struct compositor_view *view, pixman_region3
 
 	if (pixman_region32_not_empty(&view_damage)) {
 		pixman_region32_translate(&view_damage, -dx, -dy);
-		wld_copy_region(swc.drm->renderer, view->buffer, dx, dy, &view_damage);
+		wld_copy_region(renderer, view->buffer, dx, dy, &view_damage);
 	}
 
 	pixman_region32_fini(&view_damage);
 
 	if (pixman_region32_not_empty(&border_damage)) {
-		wld_fill_region(swc.drm->renderer, view->border.color, &border_damage);
+		wld_fill_region(renderer, view->border.color, &border_damage);
 	}
 
 	pixman_region32_fini(&border_damage);
@@ -239,7 +240,7 @@ renderer_repaint(struct target *target, pixman_region32_t *damage, pixman_region
 
 	wl_list_for_each_reverse (view, views, link) {
 		if (view->visible && view->base.screens & target->mask) {
-			repaint_view(target, view, damage);
+			repaint_view(swc.drm->renderer, target, view, damage);
 		}
 	}
 
@@ -633,10 +634,6 @@ calculate_damage(void)
 		surface_damage = &view->surface->state.damage;
 
 		if (pixman_region32_not_empty(surface_damage)) {
-			if (view->background) {
-				fprintf(stderr, "Background surface damaged, flushing view\n");
-				fflush(stderr);
-			}
 			renderer_flush_view(view);
 
 			/* Translate surface damage to global coordinates. */
@@ -733,6 +730,36 @@ perform_update(void *data)
 	pixman_region32_clear(&compositor.damage);
 	compositor.scheduled_updates &= ~updates;
 	compositor.updating = false;
+}
+
+void
+compositor_render_screen(struct screen *screen, struct wld_buffer *buffer)
+{
+	struct compositor_view *view;
+	const struct swc_rectangle *geom = &screen->base.geometry;
+	pixman_region32_t damage;
+	struct target screenshot_target = {
+		.view = &screen->planes.primary.view,
+		.mask = screen_mask(screen),
+	};
+
+	pixman_region32_init_rect(&damage, 0, 0, geom->width, geom->height);
+
+	if (!wld_set_target_buffer(swc.shm->renderer, buffer)) {
+		pixman_region32_fini(&damage);
+		return;
+	}
+
+	wld_fill_region(swc.shm->renderer, 0xff1b1b1b, &damage);
+
+	wl_list_for_each_reverse (view, &compositor.views, link) {
+		if (view->visible && view->base.screens & screenshot_target.mask) {
+			repaint_view(swc.shm->renderer, &screenshot_target, view, &damage);
+		}
+	}
+
+	wld_flush(swc.shm->renderer);
+	pixman_region32_fini(&damage);
 }
 
 bool

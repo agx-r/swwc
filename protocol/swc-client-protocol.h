@@ -19,10 +19,11 @@ extern "C" {
  * - @subpage page_iface_swc_panel - 
  * - @subpage page_iface_swc_background_manager - 
  * - @subpage page_iface_swc_background - 
+ * - @subpage page_iface_swc_screenshot_manager - 
  * @section page_copyright_swc Copyright
  * <pre>
  *
- * Copyright (c) 2013, 2014 Michael Forney
+ * Copyright (c) 2013, 2014 Michael Forney, agx
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -48,6 +49,8 @@ struct swc_background_manager;
 struct swc_panel;
 struct swc_panel_manager;
 struct swc_screen;
+struct swc_screenshot_manager;
+struct wl_buffer;
 struct wl_surface;
 
 #ifndef SWC_SCREEN_INTERFACE
@@ -118,6 +121,18 @@ extern const struct wl_interface swc_background_manager_interface;
  * @defgroup iface_swc_background The swc_background interface
  */
 extern const struct wl_interface swc_background_interface;
+#endif
+#ifndef SWC_SCREENSHOT_MANAGER_INTERFACE
+#define SWC_SCREENSHOT_MANAGER_INTERFACE
+/**
+ * @page page_iface_swc_screenshot_manager swc_screenshot_manager
+ * @section page_iface_swc_screenshot_manager_api API
+ * See @ref iface_swc_screenshot_manager.
+ */
+/**
+ * @defgroup iface_swc_screenshot_manager The swc_screenshot_manager interface
+ */
+extern const struct wl_interface swc_screenshot_manager_interface;
 #endif
 
 /**
@@ -425,6 +440,77 @@ swc_background_destroy(struct swc_background *swc_background)
 {
 	wl_proxy_marshal_flags((struct wl_proxy *) swc_background,
 			 SWC_BACKGROUND_DESTROY, NULL, wl_proxy_get_version((struct wl_proxy *) swc_background), WL_MARSHAL_FLAG_DESTROY);
+}
+
+/**
+ * @ingroup iface_swc_screenshot_manager
+ * @struct swc_screenshot_manager_listener
+ */
+struct swc_screenshot_manager_listener {
+	/**
+	 */
+	void (*done)(void *data,
+		     struct swc_screenshot_manager *swc_screenshot_manager);
+};
+
+/**
+ * @ingroup iface_swc_screenshot_manager
+ */
+static inline int
+swc_screenshot_manager_add_listener(struct swc_screenshot_manager *swc_screenshot_manager,
+				    const struct swc_screenshot_manager_listener *listener, void *data)
+{
+	return wl_proxy_add_listener((struct wl_proxy *) swc_screenshot_manager,
+				     (void (**)(void)) listener, data);
+}
+
+#define SWC_SCREENSHOT_MANAGER_CAPTURE 0
+
+/**
+ * @ingroup iface_swc_screenshot_manager
+ */
+#define SWC_SCREENSHOT_MANAGER_DONE_SINCE_VERSION 1
+
+/**
+ * @ingroup iface_swc_screenshot_manager
+ */
+#define SWC_SCREENSHOT_MANAGER_CAPTURE_SINCE_VERSION 1
+
+/** @ingroup iface_swc_screenshot_manager */
+static inline void
+swc_screenshot_manager_set_user_data(struct swc_screenshot_manager *swc_screenshot_manager, void *user_data)
+{
+	wl_proxy_set_user_data((struct wl_proxy *) swc_screenshot_manager, user_data);
+}
+
+/** @ingroup iface_swc_screenshot_manager */
+static inline void *
+swc_screenshot_manager_get_user_data(struct swc_screenshot_manager *swc_screenshot_manager)
+{
+	return wl_proxy_get_user_data((struct wl_proxy *) swc_screenshot_manager);
+}
+
+static inline uint32_t
+swc_screenshot_manager_get_version(struct swc_screenshot_manager *swc_screenshot_manager)
+{
+	return wl_proxy_get_version((struct wl_proxy *) swc_screenshot_manager);
+}
+
+/** @ingroup iface_swc_screenshot_manager */
+static inline void
+swc_screenshot_manager_destroy(struct swc_screenshot_manager *swc_screenshot_manager)
+{
+	wl_proxy_destroy((struct wl_proxy *) swc_screenshot_manager);
+}
+
+/**
+ * @ingroup iface_swc_screenshot_manager
+ */
+static inline void
+swc_screenshot_manager_capture(struct swc_screenshot_manager *swc_screenshot_manager, struct swc_screen *screen, struct wl_buffer *buffer)
+{
+	wl_proxy_marshal_flags((struct wl_proxy *) swc_screenshot_manager,
+			 SWC_SCREENSHOT_MANAGER_CAPTURE, NULL, wl_proxy_get_version((struct wl_proxy *) swc_screenshot_manager), 0, screen, buffer);
 }
 
 #ifdef  __cplusplus

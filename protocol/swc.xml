@@ -2,6 +2,7 @@
 <protocol name="swc">
     <copyright>
         Copyright (c) 2013, 2014 Michael Forney
+        Copyright (c) 2026       agx
 
         Permission is hereby granted, free of charge, to any person obtaining a copy
         of this software and associated documentation files (the "Software"), to deal
@@ -84,6 +85,14 @@
 
     <interface name="swc_background" version="1">
         <request name="destroy" type="destructor" />
+    </interface>
+
+    <interface name="swc_screenshot_manager" version="1">
+        <request name="capture">
+            <arg name="screen" type="object" interface="swc_screen" />
+            <arg name="buffer" type="object" interface="wl_buffer" />
+        </request>
+        <event name="done" />
     </interface>
 </protocol>
 

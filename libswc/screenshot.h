@@ -1,6 +1,6 @@
-/* swc: libswc/wayland_buffer.c
+/* swc: libswc/screenshot.h
  *
- * Copyright (c) 2013 Michael Forney
+ * Copyright (c) 2026 Michael Forney
  * Copyright (c) 2026      agx
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -22,42 +22,13 @@
  * SOFTWARE.
  */
 
-#include "wayland_buffer.h"
-#include "internal.h"
-#include "shm.h"
-#include "util.h"
+#ifndef SWC_SCREENSHOT_H
+#define SWC_SCREENSHOT_H
+
 #include <wayland-server.h>
 
-#include <wld/pixman.h>
-#include <wld/wld.h>
+struct wl_display;
 
-static const struct wl_buffer_interface buffer_impl = {
-	.destroy = destroy_resource,
-};
+struct wl_global *screenshot_manager_create(struct wl_display *display);
 
-struct wld_buffer *
-wayland_buffer_get(struct wl_resource *resource)
-{
-	if (wl_resource_instance_of(resource, &wl_buffer_interface, &buffer_impl))
-		return wl_resource_get_user_data(resource);
-
-	return NULL;
-}
-
-static void
-destroy_buffer(struct wl_resource *resource)
-{
-	struct wld_buffer *buffer = wl_resource_get_user_data(resource);
-	wld_buffer_unreference(buffer);
-}
-
-struct wl_resource *
-wayland_buffer_create_resource(struct wl_client *client, uint32_t version, uint32_t id, struct wld_buffer *buffer)
-{
-	struct wl_resource *resource;
-
-	resource = wl_resource_create(client, &wl_buffer_interface, version, id);
-	if (resource)
-		wl_resource_set_implementation(resource, &buffer_impl, buffer, &destroy_buffer);
-	return resource;
-}
+#endif

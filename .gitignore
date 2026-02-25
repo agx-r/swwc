@@ -2,6 +2,7 @@
 *.lo
 .*.sw*
 swcbg
+swcshot
 
 protocol/server-decoration-protocol.c
 protocol/server-decoration-server-protocol.h

@@ -1,6 +1,7 @@
 /* swc: libswc/compositor.h
  *
  * Copyright (c) 2013, 2014 Michael Forney
+ * Copyright (c) 2026      agx
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +30,10 @@
 #include <pixman.h>
 #include <stdbool.h>
 #include <wayland-server.h>
+struct screen;
+struct surface;
+struct window;
+struct wld_buffer;
 
 struct swc_compositor {
 	struct pointer_handler *const pointer_handler;
@@ -92,5 +97,7 @@ void compositor_view_hide(struct compositor_view *view);
 
 void compositor_view_set_border_color(struct compositor_view *view, uint32_t color);
 void compositor_view_set_border_width(struct compositor_view *view, uint32_t width);
+
+void compositor_render_screen(struct screen *screen, struct wld_buffer *buffer);
 
 #endif

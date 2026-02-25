@@ -1,6 +1,7 @@
 /* swc: libswc/swc.c
  *
  * Copyright (c) 2013-2020 Michael Forney
+ * Copyright (c) 2026      agx
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -35,6 +36,7 @@
 #include "panel_manager.h"
 #include "pointer.h"
 #include "screen.h"
+#include "screenshot.h"
 #include "seat.h"
 #include "shell.h"
 #include "shm.h"
@@ -203,6 +205,12 @@ swc_initialize(struct wl_display *display, struct wl_event_loop *event_loop, con
 		goto error13a;
 	}
 
+	swc.screenshot_manager = screenshot_manager_create(display);
+	if (!swc.screenshot_manager) {
+		ERROR("Could not initialize screenshot manager\n");
+		goto error13b;
+	}
+
 #ifdef ENABLE_XWAYLAND
 	if (!xserver_initialize()) {
 		ERROR("Could not initialize xwayland\n");
@@ -217,6 +225,8 @@ swc_initialize(struct wl_display *display, struct wl_event_loop *event_loop, con
 #ifdef ENABLE_XWAYLAND
 error14:
 #endif
+	wl_global_destroy(swc.screenshot_manager);
+error13b:
 	wl_global_destroy(swc.background_manager);
 error13a:
 	wl_global_destroy(swc.panel_manager);
@@ -256,6 +266,7 @@ swc_finalize(void)
 #ifdef ENABLE_XWAYLAND
 	xserver_finalize();
 #endif
+	wl_global_destroy(swc.screenshot_manager);
 	wl_global_destroy(swc.panel_manager);
 	wl_global_destroy(swc.xdg_decoration_manager);
 	wl_global_destroy(swc.xdg_shell);

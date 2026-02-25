@@ -1,10 +1,12 @@
 /* swc: libswc/shm.c
  *
  * Copyright (c) 2013-2020 Michael Forney
+ * Copyright (c) 2026      agx
  *
  * Based in part upon wayland-shm.c from wayland, which is:
  *
  *     Copyright © 2008 Kristian Høgsberg
+ *     Copyright (c) 2026      agx
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -181,7 +183,7 @@ create_pool(struct wl_client *client, struct wl_resource *resource, uint32_t id,
 		goto error1;
 	}
 	wl_resource_set_implementation(pool->resource, &shm_pool_impl, pool, &destroy_pool_resource);
-	pool->data = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0);
+	pool->data = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 	if (pool->data == MAP_FAILED) {
 		wl_resource_post_error(resource, WL_SHM_ERROR_INVALID_FD, "mmap failed: %s", strerror(errno));
 		goto error2;

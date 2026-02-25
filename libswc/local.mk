@@ -43,6 +43,7 @@ SWC_SOURCES =                       \
     libswc/primary_plane.c          \
     libswc/region.c                 \
     libswc/screen.c                 \
+    libswc/screenshot.c             \
     libswc/shell.c                  \
     libswc/shell_surface.c          \
     libswc/shm.c                    \
@@ -88,7 +89,7 @@ SWC_SHARED_OBJECTS = $(SWC_SOURCES:%.c=%.lo)
 
 # Explicitly state dependencies on generated files
 objects = $(foreach obj,$(1),$(dir)/$(obj).o $(dir)/$(obj).lo)
-$(call objects,background compositor panel_manager panel screen): protocol/swc-server-protocol.h
+$(call objects,background compositor panel_manager panel screen screenshot): protocol/swc-server-protocol.h
 $(call objects,dmabuf): protocol/linux-dmabuf-unstable-v1-server-protocol.h
 $(call objects,drm drm_buffer): protocol/wayland-drm-server-protocol.h
 $(call objects,kde_decoration): protocol/server-decoration-server-protocol.h

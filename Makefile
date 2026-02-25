@@ -20,7 +20,7 @@ VERSION_MINOR   := 0
 VERSION         := $(VERSION_MAJOR).$(VERSION_MINOR)
 
 TARGETS         := swc.pc
-SUBDIRS         := launch libswc protocol cursor example swcbg
+SUBDIRS         := launch libswc protocol cursor example swcbg swcshot
 CLEAN_FILES     := $(TARGETS)
 
 include config.mk

@@ -1,6 +1,7 @@
 /* swc: swc/internal.h
  *
  * Copyright (c) 2013-2019 Michael Forney
+ * Copyright (c) 2026      agx
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -49,6 +50,7 @@ struct swc {
 	struct wl_global *data_device_manager;
 	struct wl_global *kde_decoration_manager;
 	struct wl_global *panel_manager;
+	struct wl_global *screenshot_manager;
 	struct wl_global *shell;
 	struct wl_global *subcompositor;
 	struct wl_global *xdg_decoration_manager;
